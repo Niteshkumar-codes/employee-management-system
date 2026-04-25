@@ -53,15 +53,25 @@ ESLint	Code linting and quality assurance
 employee-management-system/
 │
 ├── public/
+
 ├── src/
-│   ├── components/      # Reusable components
+
+│   ├── components/  # Reusable components
+
 │   ├── pages/           # Main pages/views
+
 │   ├── services/        # API calls
+
 │   ├── App.jsx
+
 │   ├── main.jsx
+
 │   └── styles/
 │
 ├── db.json              # JSON Server database
+
 ├── package.json
+
 ├── vite.config.js
+
 └── README.md
