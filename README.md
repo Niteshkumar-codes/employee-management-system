@@ -38,15 +38,15 @@ Designed with performance and simplicity in mind, this project is ideal for lear
 
 * Technology	Description
 
-React	Frontend library for building UI
+1. React	Frontend library for building UI
 
-Vite	Fast build tool and development server
+2. Vite	Fast build tool and development server
 
-CSS / Bootstrap	Styling and responsive design
+3. CSS / Bootstrap	Styling and responsive design
 
-JSON Server / REST API	Mock or real backend API
+4. JSON Server / REST API	Mock or real backend API
 
-ESLint	Code linting and quality assurance
+5. ESLint	Code linting and quality assurance
 
 📁 Project Structure
 
