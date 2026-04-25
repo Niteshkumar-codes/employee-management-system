@@ -8,35 +8,35 @@ Designed with performance and simplicity in mind, this project is ideal for lear
 
 ➕ Add Employees
 
-Easily add new employee records with relevant details.
+* Easily add new employee records with relevant details.
 
 📋 View Employee List
 
-Display all employees in a structured and user-friendly format.
+* isplay all employees in a structured and user-friendly format.
 
 ✏️ Edit Employee Details
 
-Update existing employee information seamlessly.
+* Update existing employee information seamlessly.
 
 ❌ Delete Employees
 
-Remove employee records with confirmation.
+* Remove employee records with confirmation.
 
 🔍 Search & Filter (Optional)
 
-Quickly find employees using search functionality.
+* Quickly find employees using search functionality.
 
 ⚡ Blazing Fast Performance
 
-Powered by Vite for rapid development and optimized builds.
+* Powered by Vite for rapid development and optimized builds.
 
 ♻️ Hot Module Replacement (HMR)
 
-Instant updates during development without page reload.
+* Instant updates during development without page reload.
 
 🛠️ Tech Stack
 
-Technology	Description
+* Technology	Description
 
 React	Frontend library for building UI
 
