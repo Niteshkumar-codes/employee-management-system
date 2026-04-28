@@ -37,12 +37,18 @@ The system includes features such as dynamic forms, real-time updates, and struc
 * Instant updates during development without page reload.
 
 🛠️ Tech Stack
-Technology	                                Description
-React	                             frontend library for building UI
-Vite	                             Fast build tool and dev server
-CSS / Bootstrap	                   styling and responsive design
-JSON Server / REST API	           Mock or real backend
-ESLint	                           Code linting and quality assurance
+Technology	                              Description
+
+1. React	                             frontend library for building UI
+
+2. Vite	                             Fast build tool and dev server
+
+3. CSS / Bootstrap	                   styling and responsive design
+
+4. JSON Server / REST API	           Mock or real backend
+
+5. ESLint	                           Code linting and quality assurance
+
 
 📁 Project Structure
 
