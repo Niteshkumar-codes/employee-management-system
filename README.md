@@ -37,6 +37,7 @@ The system includes features such as dynamic forms, real-time updates, and struc
 * Instant updates during development without page reload.
 
 🛠️ Tech Stack
+
 Technology	                              Description
 
 1. React	                             frontend library for building UI
