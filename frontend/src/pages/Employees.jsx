@@ -6,9 +6,7 @@ const Employees = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retryToggle, setRetryToggle] = useState(false);
-  const [isOfflineMode, setIsOfflineMode] = useState(() => {
-    try { return localStorage.getItem('backendOffline') === 'true'; } catch (e) { return false; }
-  });
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // Modal form states
   const [showAddModal, setShowAddModal] = useState(false);

@@ -119,7 +119,7 @@ export const apiService = {
         };
       }
 
-      try { localStorage.setItem('backendOffline', 'true'); } catch (e) {}
+      setBackendOffline(true);
       return { data: mockUser, isMock: true };
     }
   },
@@ -134,7 +134,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend getDashboardSummary failed (offline), using mock data', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       
       const loggedUser = getLoggedInMockUser() || { role: 'employee', email: 'employee@ems.com', name: 'Alice Cooper' };
       const isEmployee = loggedUser.role === 'employee';
@@ -218,7 +218,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend getEmployees failed (offline), using mock data', err.message);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       return { data: mockEmployees, isMock: true };
     }
   },
@@ -253,7 +253,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend getAttendanceRecords failed (offline), using mock data', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       return {
         data: {
           total: mockAttendance.length,
@@ -275,7 +275,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend getAttendanceByEmployee failed (offline), using mock data', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       const records = mockAttendance.filter(a => a.employee?._id === employeeId || a.employee === employeeId);
       return { data: records, isMock: true };
     }
@@ -329,7 +329,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend getLeaveRequests failed (offline), using mock data', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       return {
         data: {
           total: mockLeaves.length,
@@ -354,7 +354,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend applyLeave failed (offline), adding to mock data locally', err.message);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
 
       const loggedUser = getLoggedInMockUser() || { role: 'employee', email: 'employee@ems.com', name: 'Alice Cooper', _id: 'e1' };
       const empObj = mockEmployees.find(e => e.email === loggedUser.email) || mockEmployees[0];
@@ -384,7 +384,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend approveLeave failed (offline), updating mock data locally', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       const leave = mockLeaves.find(l => l._id === id);
       if (leave) {
         leave.status = 'Approved';
@@ -402,7 +402,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend rejectLeave failed (offline), updating mock data locally', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       const leave = mockLeaves.find(l => l._id === id);
       if (leave) {
         leave.status = 'Rejected';
@@ -429,7 +429,7 @@ export const apiService = {
         throw err;
       }
       console.warn('Backend getProfile failed (offline), using mock profile', err);
-      try { localStorage.setItem('backendOffline', 'true'); } catch(e) {}
+      setBackendOffline(true);
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : { role: 'employee', email: 'employee@ems.com', name: 'Alice Cooper' };
       const emp = mockEmployees.find(e => e.email === user.email) || mockEmployees[0];

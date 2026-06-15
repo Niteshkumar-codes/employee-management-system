@@ -17,9 +17,7 @@ const Leaves = () => {
     return null;
   });
   const [retryToggle, setRetryToggle] = useState(false);
-  const [isOfflineMode, setIsOfflineMode] = useState(() => {
-    try { return localStorage.getItem('backendOffline') === 'true'; } catch (e) { return false; }
-  });
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
   
   // Apply Leave form state
   const [showApplyForm, setShowApplyForm] = useState(false);

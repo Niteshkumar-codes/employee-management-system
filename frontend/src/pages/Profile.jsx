@@ -5,18 +5,16 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isOfflineMode, setIsOfflineMode] = useState(() => {
-    try { return localStorage.getItem('backendOffline') === 'true'; } catch (e) { return false; }
-  });
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
       setError('');
       try {
-        const { data } = await apiService.getProfile();
+        const { data, isMock } = await apiService.getProfile();
         setProfile(data);
-        try { setIsOfflineMode(localStorage.getItem('backendOffline') === 'true'); } catch (e) {}
+        setIsOfflineMode(isMock);
       } catch (err) {
         console.error('Profile API Error:', err);
         setError('Failed to load profile details.');

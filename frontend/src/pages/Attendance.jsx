@@ -17,9 +17,7 @@ const Attendance = () => {
     return null;
   });
   const [retryToggle, setRetryToggle] = useState(false);
-  const [isOfflineMode, setIsOfflineMode] = useState(() => {
-    try { return localStorage.getItem('backendOffline') === 'true'; } catch (e) { return false; }
-  });
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [employeeId, setEmployeeId] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
