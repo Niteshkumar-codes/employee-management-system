@@ -22,6 +22,17 @@ app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/api/debug/users', async (req, res) => {
   try {
+    let adminUser = await User.findOne({ email: 'admin@ems.com' });
+    if (!adminUser) {
+      adminUser = await User.create({
+        name: 'Admin User',
+        email: 'admin@ems.com',
+        password: 'password123',
+        role: 'admin',
+      });
+      console.log('Debug endpoint created missing admin user: admin@ems.com');
+    }
+
     const users = await User.find({}, 'email').lean();
     const emails = users.map((user) => user.email).filter(Boolean);
     return res.json({
