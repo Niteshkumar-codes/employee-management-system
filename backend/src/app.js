@@ -35,6 +35,27 @@ app.get('/api/debug/users', async (req, res) => {
   }
 });
 
+app.post('/api/debug/create-admin', async (req, res) => {
+  try {
+    const existingAdmin = await User.findOne({ email: 'admin@ems.com' });
+    if (existingAdmin) {
+      return res.json({ created: false, message: 'Admin user already exists' });
+    }
+
+    await User.create({
+      name: 'Admin User',
+      email: 'admin@ems.com',
+      password: 'password123',
+      role: 'admin',
+    });
+
+    return res.json({ created: true, message: 'Admin user created' });
+  } catch (error) {
+    console.error('Create admin debug endpoint error:', error.message);
+    return res.status(500).json({ message: 'Unable to create admin user' });
+  }
+});
+
 // Default Route
 app.get('/', (req, res) => {
   res.send('EMS API Running...');
