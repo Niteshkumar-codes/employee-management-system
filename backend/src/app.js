@@ -37,6 +37,29 @@ app.get('/api/debug/reset-test-user', async (req, res) => {
   }
 });
 
+app.get('/api/debug/create-employee-user', async (req, res) => {
+  try {
+    const email = 'employee@ems.com';
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.json({ created: false, email });
+    }
+
+    await User.create({
+      name: 'Alice Cooper',
+      email,
+      password: 'password123',
+      role: 'employee',
+    });
+
+    return res.json({ created: true, email });
+  } catch (error) {
+    console.error('Create employee user endpoint error:', error.message);
+    return res.status(500).json({ created: false, email: 'employee@ems.com' });
+  }
+});
+
 // Default Route
 app.get('/', (req, res) => {
   res.send('EMS API Running...');
