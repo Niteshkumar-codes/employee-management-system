@@ -1,80 +1,114 @@
-Employee Management System (React + Vite)
+Employee Management System (EMS)
+📌 Overview
 
-A modern and lightweight Employee Management System (EMS) built using React and Vite. This application enables users to efficiently manage employee records with full CRUD (Create, Read, Update, Delete) functionality.
+Employee Management System (EMS) is a full-stack web application designed to manage employees, attendance, leave requests, and organizational data efficiently. The system provides role-based access for Admin, HR, and Employees.
 
-Designed with performance and simplicity in mind, the project leverages Vite’s fast build system and React’s component-based architecture to deliver a smooth and responsive user experience. It serves as a practical example for mastering React fundamentals, state management, and reusable UI components.
+🚀 Live Demo
 
-The system includes features such as dynamic forms, real-time updates, and structured data handling, making it easy to add, edit, view, and delete employee details. With a clean and intuitive interface, users can navigate and manage records effortlessly.
+Frontend:
 
-🚀 Features
 
-➕ Add Employees
+Backend API:
 
-* Easily add new employee records with relevant details.
-
-📋 View Employee List
-
-* isplay all employees in a structured and user-friendly format.
-
-✏️ Edit Employee Details
-
-* Update existing employee information seamlessly.
-
-❌ Delete Employees
-
-* Remove employee records with confirmation.
-
-🔍 Search & Filter (Optional)
-
-* Quickly find employees using search functionality.
-
-⚡ Blazing Fast Performance
-
-* Powered by Vite for rapid development and optimized builds.
-
-♻️ Hot Module Replacement (HMR)
-
-* Instant updates during development without page reload.
 
 🛠️ Tech Stack
-
-Technology	                              Description
-
-1. React	                             frontend library for building UI
-
-2. Vite	                             Fast build tool and dev server
-
-3. CSS / Bootstrap	                   styling and responsive design
-
-4. JSON Server / REST API	           Mock or real backend
-
-5. ESLint	                           Code linting and quality assurance
-
-
-📁 Project Structure
-
+Frontend
+React.js
+Vite
+CSS
+Backend
+Node.js
+Express.js
+Database
+MongoDB Atlas
+Authentication
+JWT (JSON Web Token)
+Deployment
+Render
+✨ Features
+Authentication
+Secure Login System
+JWT Authentication
+Role-Based Access Control
+Employee Management
+Add Employees
+View Employee Directory
+Employee Status Management
+Attendance Management
+Check In
+Check Out
+Attendance Tracking
+Leave Management
+Apply Leave
+Approve / Reject Leave Requests
+Leave Status Tracking
+Dashboard
+Total Employees
+Active Employees
+Attendance Summary
+Leave Summary
+Department Distribution
+👥 User Roles
+Admin
+Manage Employees
+View Attendance
+Manage Leave Requests
+Access Dashboard Analytics
+HR
+View Employee Records
+Monitor Attendance
+Review Leave Requests
+Employee
+Mark Attendance
+Apply for Leave
+View Personal Profile
+📂 Project Structure
 employee-management-system/
 │
-├── public/
-
-├── src/
-
-│   ├── components/  # Reusable components
-
-│   ├── pages/           # Main pages/views
-
-│   ├── services/        # API calls
-
-│   ├── App.jsx
-
-│   ├── main.jsx
-
-│   └── styles/
+├── backend/
+│   ├── src/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   └── middleware/
 │
-├── db.json              # JSON Server database
-
-├── package.json
-
-├── vite.config.js
-
+├── frontend/
+│   ├── src/
+│   ├── pages/
+│   ├── services/
+│   └── components/
+│
 └── README.md
+⚙️ Installation
+Clone Repository
+git clone https://github.com/Niteshkumar-codes/employee-management-system.git
+Backend Setup
+cd backend
+npm install
+npm run dev
+Frontend Setup
+cd frontend
+npm install
+npm run dev
+🔑 Test Credentials
+Admin
+Email: admin@ems.com
+Password: password123
+HR
+Email: test@gmail.com
+Password: password123
+Employee
+Email: employee@ems.com
+Password: password123
+📈 Project Highlights
+Full Stack MERN Application
+MongoDB Atlas Integration
+JWT Authentication
+Role-Based Access Control
+Attendance & Leave Management
+Responsive User Interface
+Deployed on Render
+👨‍💻 Developer
+
+Nitesh Kumar
+B.Tech CSE Student
