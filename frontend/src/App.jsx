@@ -1,38 +1,103 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Attendance from './pages/Attendance';
 import Leaves from './pages/Leaves';
 import Profile from './pages/Profile';
+import './App.css';
 
-function App() {
+const navItems = [
+  { path: '/dashboard', label: 'Dashboard' },
+  { path: '/employees', label: 'Employees' },
+  { path: '/attendance', label: 'Attendance' },
+  { path: '/leaves', label: 'Leaves' },
+  { path: '/profile', label: 'Profile' }
+];
+
+const pageTitles = {
+  '/dashboard': 'Dashboard',
+  '/employees': 'Employees',
+  '/attendance': 'Attendance',
+  '/leaves': 'Leaves',
+  '/profile': 'Profile'
+};
+
+function AppShell() {
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const hideLayout = location.pathname === '/';
+  const pageTitle = pageTitles[location.pathname] || 'EMS Portal';
+  const user = (() => {
+    const savedUser = localStorage.getItem('user');
+    if (!savedUser) return null;
+    try {
+      return JSON.parse(savedUser);
+    } catch {
+      return null;
+    }
+  })();
+  const initials = user?.name ? user.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() : 'EM';
+
   return (
-    <Router>
-      <div style={{ fontFamily: 'Inter, system-ui, Avenir, Helvetica, Arial, sans-serif', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Navigation Bar */}
-        <nav style={{
-          display: 'flex',
-          gap: '1.5rem',
-          padding: '1rem 2rem',
-          backgroundColor: '#1e293b',
-          color: 'white',
-          alignItems: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <span style={{ fontWeight: 'bold', fontSize: '1.25rem', marginRight: 'auto', letterSpacing: '0.5px' }}>
-            💼 EMS Portal
-          </span>
-          <Link to="/" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = 'white'} onMouseOut={(e) => e.target.style.color = '#cbd5e1'}>Login</Link>
-          <Link to="/dashboard" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = 'white'} onMouseOut={(e) => e.target.style.color = '#cbd5e1'}>Dashboard</Link>
-          <Link to="/employees" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = 'white'} onMouseOut={(e) => e.target.style.color = '#cbd5e1'}>Employees</Link>
-          <Link to="/attendance" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = 'white'} onMouseOut={(e) => e.target.style.color = '#cbd5e1'}>Attendance</Link>
-          <Link to="/leaves" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = 'white'} onMouseOut={(e) => e.target.style.color = '#cbd5e1'}>Leaves</Link>
-          <Link to="/profile" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: '500', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = 'white'} onMouseOut={(e) => e.target.style.color = '#cbd5e1'}>Profile</Link>
-        </nav>
+    <div className="app-shell">
+      {!hideLayout && (
+        <aside className={`sidebar ${sidebarOpen ? 'sidebar--open' : ''}`}>
+          <div className="sidebar__brand">
+            <div className="sidebar__logo">EMS</div>
+            <p className="sidebar__subtitle">Employee Management</p>
+          </div>
 
-        {/* Main Content Area */}
-        <main style={{ flex: 1, backgroundColor: '#f8fafc', padding: '1rem' }}>
+          <nav className="sidebar__nav">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className="sidebar__link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="sidebar__footer">
+            <div>
+              <p className="sidebar__footer-label">Logged in as</p>
+              <p className="sidebar__footer-value">{user?.name || 'Guest User'}</p>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      <div className="main-shell">
+        {!hideLayout && (
+          <header className="topbar">
+            <button
+              type="button"
+              className="topbar__menu"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            <div className="topbar__title-group">
+              <p className="topbar__eyebrow">Admin Panel</p>
+              <h1 className="topbar__title">{pageTitle}</h1>
+            </div>
+            <div className="topbar__profile">
+              <div className="topbar__avatar">{initials}</div>
+              <div className="topbar__profile-meta">
+                <p className="topbar__profile-name">{user?.name || 'EMS User'}</p>
+                <p className="topbar__profile-role">{user?.role ? user.role.toUpperCase() : 'USER'}</p>
+              </div>
+            </div>
+          </header>
+        )}
+
+        <main className={`main-content ${hideLayout ? 'main-content--center' : ''}`} onClick={() => sidebarOpen && setSidebarOpen(false)}>
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -43,6 +108,14 @@ function App() {
           </Routes>
         </main>
       </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppShell />
     </Router>
   );
 }
