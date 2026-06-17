@@ -137,5 +137,4 @@ npm run dev
 ## 👨‍💻 Developer
 
 **Nitesh Kumar**  
-B.Tech CSE Student  
-Dronacharya Group of Institutions
+B.Tech CSE 
