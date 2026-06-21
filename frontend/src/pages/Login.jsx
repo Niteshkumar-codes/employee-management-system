@@ -153,14 +153,6 @@ const Login = () => {
             </div>
             <h2 className="login-title">Welcome Back</h2>
             <p className="login-subtitle">Sign in to manage your workspace console</p>
-            
-            {import.meta.env.DEV && (
-              <div className="dev-credentials">
-                💡 <strong>Credentials:</strong><br />
-                Admin: admin@ems.com / password123<br />
-                Persistence: persistence.admin@ems.local / Password123!
-              </div>
-            )}
           </div>
 
           {error && (

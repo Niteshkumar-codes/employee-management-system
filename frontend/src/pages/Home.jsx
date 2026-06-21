@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Home.css';
 
@@ -124,6 +125,7 @@ const HeroIllustration = () => (
 
 const Home = () => {
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('home-hero');
 
   const handleGetStarted = () => {
     const token = localStorage.getItem('token');
@@ -135,20 +137,94 @@ const Home = () => {
     }
   };
 
+  const handleScrollTo = (e, id) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.history.pushState(null, '', `#${id}`);
+      setActiveSection(id);
+    }
+  };
+
+  useEffect(() => {
+    // Scroll to hash on mount
+    const hash = window.location.hash;
+    if (hash) {
+      const id = hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveSection(id);
+        }, 150);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Observe sections to highlight active link
+    const sections = ['home-hero', 'features', 'about', 'contact'];
+    const observerOptions = {
+      root: null,
+      rootMargin: '-30% 0px -50% 0px', // Trigger when section is in the middle of viewport
+      threshold: 0.1,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      sections.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) observer.unobserve(el);
+      });
+    };
+  }, []);
+
   return (
     <div className="home-container">
       {/* Landing Navbar */}
       <header className="home-navbar">
-        <div className="home-navbar__logo-wrap">
+        <div className="home-navbar__logo-wrap" onClick={(e) => handleScrollTo(e, 'home-hero')} style={{ cursor: 'pointer' }}>
           <div className="home-navbar__logo">
             <span>EMS</span>
           </div>
           <span className="home-navbar__logo-text">Enterprise Portal</span>
         </div>
         <nav className="home-navbar__links">
-          <a href="#features">Features</a>
-          <a href="#about">About</a>
-          <a href="#contact">Contact</a>
+          <a
+            href="#features"
+            className={activeSection === 'features' ? 'active' : ''}
+            onClick={(e) => handleScrollTo(e, 'features')}
+          >
+            Features
+          </a>
+          <a
+            href="#about"
+            className={activeSection === 'about' ? 'active' : ''}
+            onClick={(e) => handleScrollTo(e, 'about')}
+          >
+            About
+          </a>
+          <a
+            href="#contact"
+            className={activeSection === 'contact' ? 'active' : ''}
+            onClick={(e) => handleScrollTo(e, 'contact')}
+          >
+            Contact
+          </a>
         </nav>
         <div className="home-navbar__actions">
           <Link to="/login" className="home-navbar__login-btn">
@@ -161,7 +237,7 @@ const Home = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="home-hero">
+      <section className="home-hero" id="home-hero">
         <div className="home-hero__left">
           {/* Feature Badges */}
           <div className="home-hero__badges">
@@ -269,6 +345,200 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Features Section */}
+      <section id="features" className="home-features-section">
+        <div className="section-container">
+          <div className="section-header">
+            <span className="section-eyebrow">Enterprise Features</span>
+            <h2 className="section-title">Everything you need to manage your workforce</h2>
+            <p className="section-subtitle">
+              Powerful tools designed to simplify day-to-day operations and boost team productivity.
+            </p>
+          </div>
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-icon feature-icon--blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <h3>Employee Management</h3>
+              <p>Maintain a centralized employee directory. Track designations, departments, profiles, and contact details with ease.</p>
+            </div>
+            
+            <div className="feature-card">
+              <div className="feature-icon feature-icon--green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <h3>Attendance Tracking</h3>
+              <p>Automate check-in and check-out logs. Monitor attendance rate and working hours via clean digital records.</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon feature-icon--amber">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                  <path d="M8 14h8" />
+                  <path d="M8 18h5" />
+                </svg>
+              </div>
+              <h3>Leave Management</h3>
+              <p>Submit and review time-off requests. Approve leaves, check balances, and manage team schedules seamlessly.</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon feature-icon--purple">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <h3>Role-Based Access</h3>
+              <p>Secure system access with role levels (Admin, Manager, Employee) to safeguard corporate records.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="home-about-section">
+        <div className="section-container">
+          <div className="about-grid">
+            <div className="about-content">
+              <span className="section-eyebrow">About the Project</span>
+              <h2 className="section-title">Modern Corporate Administration</h2>
+              <p className="about-text">
+                The Enterprise Portal is a comprehensive Employee Management System designed to modernize internal workspace workflows. By integrating directory listings, time management, and leave workflows into a unified console, we help organization teams reduce administrative overhead and improve transparency.
+              </p>
+              
+              <h3 className="stats-heading">Project Statistics</h3>
+              <div className="about-stats-grid">
+                <div className="stat-card">
+                  <span className="stat-card__number">150+</span>
+                  <span className="stat-card__label">Employee Profiles</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-card__number">98.4%</span>
+                  <span className="stat-card__label">Attendance Rate</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-card__number">Instant</span>
+                  <span className="stat-card__label">Leave Approvals</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-card__number">Secure</span>
+                  <span className="stat-card__label">JWT Shielding</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="about-tech">
+              <h3 className="tech-title">Technology Stack</h3>
+              <div className="tech-cards">
+                <div className="tech-badge">
+                  <span className="tech-badge__name">React & Vite</span>
+                  <span className="tech-badge__role">Frontend Library & Bundler</span>
+                </div>
+                <div className="tech-badge">
+                  <span className="tech-badge__name">Vanilla CSS</span>
+                  <span className="tech-badge__role">Custom UI Design & Styling</span>
+                </div>
+                <div className="tech-badge">
+                  <span className="tech-badge__name">Node.js & Express</span>
+                  <span className="tech-badge__role">RESTful Server & API Layer</span>
+                </div>
+                <div className="tech-badge">
+                  <span className="tech-badge__name">MongoDB</span>
+                  <span className="tech-badge__role">Database & Data Persistence</span>
+                </div>
+                <div className="tech-badge">
+                  <span className="tech-badge__name">JWT Auth</span>
+                  <span className="tech-badge__role">Secure Session Credentials</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="home-contact-section">
+        <div className="section-container">
+          <div className="contact-card">
+            <div className="contact-info">
+              <span className="section-eyebrow">Project Contact</span>
+              <h2 className="section-title">Developer & Project Info</h2>
+              <p className="contact-subtitle">Key information about this application development.</p>
+              
+              <div className="contact-details">
+                <div className="contact-item">
+                  <div className="contact-item__icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="contact-item__label">Application</span>
+                    <span className="contact-item__value">Employee Management System</span>
+                  </div>
+                </div>
+
+                <div className="contact-item">
+                  <div className="contact-item__icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                      <polyline points="2 17 12 22 22 17" />
+                      <polyline points="2 12 12 17 22 12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="contact-item__label">Architecture</span>
+                    <span className="contact-item__value">MERN Stack Application</span>
+                  </div>
+                </div>
+                
+                <div className="contact-item">
+                  <div className="contact-item__icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="contact-item__label">Developer Name</span>
+                    <span className="contact-item__value">Nitesh Kumar</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="contact-decoration">
+              <div className="contact-blob"></div>
+              <div className="contact-blob-2"></div>
+              <div className="contact-badge-floating">
+                <span>Enterprise Portal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <p>© 2026 Employee Management System | Built by Nitesh Kumar</p>
+      </footer>
     </div>
   );
 };
