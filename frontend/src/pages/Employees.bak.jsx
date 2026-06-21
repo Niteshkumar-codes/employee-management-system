@@ -3,15 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 const Employees = () => {
-  const [user] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-
-  if (user?.role === 'employee') {
-    return null;
-  }
-
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,7 +18,6 @@ const Employees = () => {
   const [empId, setEmpId] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [department, setDepartment] = useState('Engineering');
   const [designation, setDesignation] = useState('Software Engineer');
   const [status, setStatus] = useState('active');
@@ -99,7 +89,6 @@ const Employees = () => {
     setEmpId('EMP' + Math.floor(Math.random() * 9000 + 1000));
     setName('');
     setEmail('');
-    setPassword('');
     setDepartment('Engineering');
     setDesignation('Software Engineer');
     setStatus('active');
@@ -114,12 +103,8 @@ const Employees = () => {
 
   const handleSaveEmployee = async (e) => {
     e.preventDefault();
-    if (!empId || !name || !email || !password || !department || !designation) {
+    if (!empId || !name || !email || !department || !designation) {
       setAddError('Please fill in all required fields.');
-      return;
-    }
-    if (password.length < 6) {
-      setAddError('Password must be at least 6 characters long.');
       return;
     }
 
@@ -131,7 +116,6 @@ const Employees = () => {
         employeeId: empId,
         name,
         email,
-        password,
         phone: '9876543210',
         department,
         designation,
@@ -408,18 +392,6 @@ const Employees = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. john@company.com"
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Password *</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="e.g. min 6 characters"
-                  minLength={6}
                   required
                 />
               </div>

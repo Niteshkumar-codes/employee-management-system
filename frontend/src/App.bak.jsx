@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -75,21 +75,6 @@ const pageTitles = {
   '/attendance': 'Attendance Log Console',
   '/leaves': 'Time-Off Administration',
   '/profile': 'Corporate Profile Hub'
-};
-
-const ProtectedRoute = ({ role, children }) => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
-  if (!token || !userStr) {
-    return <Navigate to="/login" replace />;
-  }
-  try {
-    const user = JSON.parse(userStr);
-    if (role === 'admin-only' && user.role === 'employee') {
-      return <Navigate to="/dashboard" replace />;
-    }
-  } catch (e) {}
-  return children;
 };
 
 function AppShell() {
@@ -297,7 +282,7 @@ function AppShell() {
     }
 
     // 2. Employees Match
-    if (user?.role !== 'employee' && searchEmployees && searchEmployees.length > 0) {
+    if (searchEmployees && searchEmployees.length > 0) {
       searchEmployees.forEach(emp => {
         const name = emp.name || '';
         const email = emp.email || '';
@@ -561,19 +546,17 @@ function AppShell() {
             </div>
 
             <nav className="sidebar__nav">
-              {navItems
-                .filter((item) => !(item.path === '/employees' && user?.role === 'employee'))
-                .map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <span className="sidebar__link-icon">{item.icon}</span>
-                    <span className="sidebar__link-label">{item.label}</span>
-                  </NavLink>
-                ))}
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <span className="sidebar__link-icon">{item.icon}</span>
+                  <span className="sidebar__link-label">{item.label}</span>
+                </NavLink>
+              ))}
             </nav>
 
             <div className="sidebar__footer">
@@ -791,16 +774,7 @@ function AppShell() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route 
-              path="/employees" 
-              element={
-                <ProtectedRoute role="admin-only">
-                  <Employees />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/employee-management" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/admin-only" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/employees" element={<Employees />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/leaves" element={<Leaves />} />
             <Route path="/profile" element={<Profile />} />

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://employee-management-system-y7hr.onrender.com/api';
+const API_BASE_URL = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:5000/api'
+  : 'https://employee-management-system-y7hr.onrender.com/api';
 
 const setBackendOffline = (offline) => {
   try { localStorage.setItem('backendOffline', offline ? 'true' : 'false'); } catch (e) {}

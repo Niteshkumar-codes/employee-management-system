@@ -19,7 +19,7 @@ router.get('/', protect, (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ message: 'Not authorized' });
     if (req.user.role === 'employee') {
-      req.query.employee = req.employee ? req.employee._id : req.user._id;
+      req.query.employee = req.user._id;
     }
     return getLeaveRequests(req, res, next);
   } catch (error) {

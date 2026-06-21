@@ -1,21 +1,15 @@
 import Employee from '../models/employee.model.js';
-import User from '../models/user.model.js';
 
 // @desc    Create a new employee
 // @route   POST /api/employees
 // @access  Private
 export const createEmployee = async (req, res, next) => {
   try {
-    const { employeeId, name, email, phone, department, designation, salary, joiningDate, status, password } = req.body;
+    const { employeeId, name, email, phone, department, designation, salary, joiningDate, status } = req.body;
 
     // Check if required fields exist in request
     if (!employeeId || !name || !email || !phone || !department || !designation || salary === undefined) {
       return res.status(400).json({ message: 'Please provide all required employee fields' });
-    }
-
-    // Password validation for new employees (min 6 characters)
-    if (!password || password.length < 6) {
-      return res.status(400).json({ message: 'Password is required and must be at least 6 characters' });
     }
 
     // Check if employee with same employeeId or email already exists
@@ -24,41 +18,17 @@ export const createEmployee = async (req, res, next) => {
       return res.status(400).json({ message: 'Employee with this ID or Email already exists' });
     }
 
-    // Check if user already exists in User collection
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User with this email already exists' });
-    }
-
-    let employee;
-    try {
-      employee = await Employee.create({
-        employeeId,
-        name,
-        email,
-        phone,
-        department,
-        designation,
-        salary,
-        joiningDate,
-        status,
-      });
-    } catch (err) {
-      return res.status(400).json({ message: err.message || 'Failed to create employee record' });
-    }
-
-    try {
-      await User.create({
-        name,
-        email,
-        password,
-        role: 'employee',
-      });
-    } catch (err) {
-      // rollback employee creation if user creation fails
-      await Employee.findByIdAndDelete(employee._id);
-      return res.status(400).json({ message: err.message || 'Failed to create user credentials' });
-    }
+    const employee = await Employee.create({
+      employeeId,
+      name,
+      email,
+      phone,
+      department,
+      designation,
+      salary,
+      joiningDate,
+      status,
+    });
 
     res.status(201).json(employee);
   } catch (error) {
@@ -71,11 +41,7 @@ export const createEmployee = async (req, res, next) => {
 // @access  Private
 export const getEmployees = async (req, res, next) => {
   try {
-    let query = {};
-    if (req.user && req.user.role === 'employee') {
-      query = { email: req.user.email };
-    }
-    const employees = await Employee.find(query).sort({ createdAt: -1 });
+    const employees = await Employee.find({}).sort({ createdAt: -1 });
     res.status(200).json(employees);
   } catch (error) {
     next(error);
@@ -91,15 +57,6 @@ export const getEmployeeById = async (req, res, next) => {
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
-
-    // Guard: Employees can only view their own profile details
-    if (req.user && req.user.role === 'employee') {
-      const ownEmpId = req.employee && req.employee._id ? req.employee._id.toString() : null;
-      if (ownEmpId !== req.params.id) {
-        return res.status(403).json({ message: 'Forbidden: cannot view other employee details' });
-      }
-    }
-
     res.status(200).json(employee);
   } catch (error) {
     next(error);
@@ -116,25 +73,12 @@ export const updateEmployee = async (req, res, next) => {
       return res.status(404).json({ message: 'Employee not found' });
     }
 
-    const oldEmail = employee.email;
-
     // Find and update employee, returning the updated document and running model validations
     const updatedEmployee = await Employee.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
-
-    // Synchronize updates with corresponding User document if name or email changed
-    if (updatedEmployee) {
-      const userUpdate = {};
-      if (req.body.name) userUpdate.name = req.body.name;
-      if (req.body.email) userUpdate.email = req.body.email;
-
-      if (Object.keys(userUpdate).length > 0) {
-        await User.findOneAndUpdate({ email: oldEmail }, userUpdate);
-      }
-    }
 
     res.status(200).json(updatedEmployee);
   } catch (error) {
@@ -153,11 +97,8 @@ export const deleteEmployee = async (req, res, next) => {
     }
 
     await Employee.findByIdAndDelete(req.params.id);
-    // Delete corresponding user credentials
-    await User.findOneAndDelete({ email: employee.email });
     res.status(200).json({ message: 'Employee deleted successfully' });
   } catch (error) {
     next(error);
   }
 };
-
