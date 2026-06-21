@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 const Leaves = () => {
@@ -28,6 +29,33 @@ const Leaves = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
+  const location = useLocation();
+
+  // Dispatch leaves list update for in-memory global search
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ems-data-leaves', { detail: records }));
+  }, [records]);
+
+  // Scroll to search highlighted item
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.substring(1);
+      const timer = setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.style.backgroundColor = 'rgba(79, 70, 229, 0.08)';
+          element.style.transition = 'background-color 0.5s ease';
+          const fadeTimer = setTimeout(() => {
+            element.style.backgroundColor = '';
+          }, 3000);
+          return () => clearTimeout(fadeTimer);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [location, records]);
+
   useEffect(() => {
     const fetchLeaves = async () => {
       setLoading(true);
@@ -36,7 +64,6 @@ const Leaves = () => {
         const { data, isMock } = await apiService.getLeaveRequests();
         let allRecords = data.records || data || [];
         
-        // If logged-in user is an employee, filter list to their own requests
         if (user && user.role === 'employee') {
           allRecords = allRecords.filter(
             r => r.employee?._id === user._id || r.employee?.email === user.email || r.employee === user._id
@@ -72,7 +99,7 @@ const Leaves = () => {
     setActionLoading(true);
     setError('');
     setSuccessMsg('');
-      try {
+    try {
       const leaveTypeMap = {
         'Sick Leave': 'Sick',
         'Casual Leave': 'Casual',
@@ -94,15 +121,24 @@ const Leaves = () => {
       console.log('Leaves.jsx apply response:', data);
       setIsOfflineMode(isMock);
       setSuccessMsg('Leave request submitted successfully!');
+      
+      const event = new CustomEvent('ems-notification', {
+        detail: {
+          type: 'leave',
+          text: `Leave request submitted by ${user?.name || 'Employee'} for ${leaveType}`,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+
       setShowApplyForm(false);
-      // Reset form
+      
       setStartDate('');
       setEndDate('');
       setReason('');
       setRetryToggle(prev => !prev);
     } catch (err) {
       console.error('Leaves.jsx apply error:', err);
-      // Show precise backend message when available
       if (err?.response) {
         const raw = err.response.data?.message || err.response.data || err.response.statusText;
         setError(typeof raw === 'string' ? raw : JSON.stringify(raw));
@@ -121,9 +157,21 @@ const Leaves = () => {
     setError('');
     setSuccessMsg('');
     try {
+      const record = records.find(r => r._id === id);
+      const empName = record?.employee?.name || 'Employee';
       const { isMock } = await apiService.approveLeave(id);
       setIsOfflineMode(isMock);
       setSuccessMsg('Leave request approved!');
+      
+      const event = new CustomEvent('ems-notification', {
+        detail: {
+          type: 'leave-approved',
+          text: `Leave approved for ${empName}`,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+
       setRetryToggle(prev => !prev);
     } catch (err) {
       console.error(err);
@@ -138,9 +186,21 @@ const Leaves = () => {
     setError('');
     setSuccessMsg('');
     try {
+      const record = records.find(r => r._id === id);
+      const empName = record?.employee?.name || 'Employee';
       const { isMock } = await apiService.rejectLeave(id);
       setIsOfflineMode(isMock);
       setSuccessMsg('Leave request rejected!');
+      
+      const event = new CustomEvent('ems-notification', {
+        detail: {
+          type: 'leave-rejected',
+          text: `Leave rejected for ${empName}`,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+
       setRetryToggle(prev => !prev);
     } catch (err) {
       console.error(err);
@@ -159,42 +219,15 @@ const Leaves = () => {
     });
   };
 
-  const getStatusStyle = (status) => {
+  const getStatusClass = (status) => {
     switch (status) {
       case 'Approved':
-        return {
-          backgroundColor: '#e6fffa',
-          color: '#047487',
-          border: '1px solid #b2f5ea',
-          padding: '0.25rem 0.6rem',
-          borderRadius: '20px',
-          fontSize: '0.8rem',
-          fontWeight: '600',
-          display: 'inline-block'
-        };
+        return 'badge badge--success';
       case 'Rejected':
-        return {
-          backgroundColor: '#fff5f5',
-          color: '#c53030',
-          border: '1px solid #feb2b2',
-          padding: '0.25rem 0.6rem',
-          borderRadius: '20px',
-          fontSize: '0.8rem',
-          fontWeight: '600',
-          display: 'inline-block'
-        };
+        return 'badge badge--danger';
       case 'Pending':
       default:
-        return {
-          backgroundColor: '#fffaf0',
-          color: '#dd6b20',
-          border: '1px solid #fbd38d',
-          padding: '0.25rem 0.6rem',
-          borderRadius: '20px',
-          fontSize: '0.8rem',
-          fontWeight: '600',
-          display: 'inline-block'
-        };
+        return 'badge badge--warning';
     }
   };
 
@@ -202,92 +235,79 @@ const Leaves = () => {
   const isAdminOrHR = user?.role === 'admin' || user?.role === 'hr';
 
   return (
-    <div className="leaves-page" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className="section-card section-card--wide" style={{ animation: 'fade-in-up 0.4s ease' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h1 style={{ margin: 0, color: '#0f172a', fontWeight: 'bold' }}>Leave Requests</h1>
-          {isOfflineMode && (
-            <span style={{
-              backgroundColor: '#fffbeb',
-              color: '#b45309',
-              border: '1px solid #fef3c7',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.8rem',
-              fontWeight: '600'
-            }}>
-              ⚡ Demo Mode
-            </span>
-          )}
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>Leave Requests</h1>
+          {isOfflineMode && <span className="badge badge--warning">Demo Fallback Mode</span>}
         </div>
         
         {isEmployee && (
           <button
             onClick={() => setShowApplyForm(prev => !prev)}
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#2563eb',
+              padding: '0.625rem 1.25rem',
+              background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               fontWeight: '600',
-              transition: 'background-color 0.2s'
+              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)',
+              transition: 'transform 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#2563eb'}
+            onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.target.style.transform = 'none'}
           >
-            {showApplyForm ? 'Close Form' : 'Apply for Leave'}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              {showApplyForm ? (
+                <path d="M18 6L6 18M6 6l12 12" />
+              ) : (
+                <>
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </>
+              )}
+            </svg>
+            {showApplyForm ? 'Close Console' : 'Apply for Leave'}
           </button>
         )}
       </div>
 
       {successMsg && (
-        <div style={{
-          backgroundColor: '#f0fdf4',
-          color: '#16a34a',
-          padding: '0.75rem 1rem',
-          borderRadius: '8px',
-          border: '1px solid #bbf7d0',
-          marginBottom: '1.5rem',
-          fontWeight: '500'
-        }}>
-          ✅ {successMsg}
+        <div className="badge badge--success" style={{ padding: '0.75rem 1rem', width: '100%', marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', fontSize: '0.9rem' }}>
+          <span>✅</span> {successMsg}
         </div>
       )}
 
       {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          color: '#991b1b',
-          padding: '1rem 1.5rem',
-          borderRadius: '8px',
-          border: '1px solid #fca5a5',
-          marginBottom: '2rem'
-        }}>
-          ⚠️ {error}
+        <div className="alert" style={{ marginBottom: '2rem' }}>
+          <span>⚠️</span>
+          <div>{error}</div>
         </div>
       )}
 
       {/* Apply Leave Form */}
       {isEmployee && showApplyForm && (
         <div style={{
-          backgroundColor: 'white',
+          backgroundColor: 'var(--background)',
           padding: '2rem',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
           marginBottom: '2rem'
         }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', color: '#0f172a' }}>📝 Apply for Leave</h3>
+          <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)', fontSize: '1.10rem', fontWeight: 700 }}>📝 Fill Time-Off Request</h3>
           <form onSubmit={handleApplyLeave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#334155' }}>Leave Type</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Leave Category</label>
                 <select
                   value={leaveType}
                   onChange={(e) => setLeaveType(e.target.value)}
-                  style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%' }}
                 >
                   <option value="Sick Leave">Sick Leave</option>
                   <option value="Casual Leave">Casual Leave</option>
@@ -296,52 +316,60 @@ const Leaves = () => {
                   <option value="Paternity Leave">Paternity Leave</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#334155' }}>Start Date</label>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Start Date</label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
-                  style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%' }}
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#334155' }}>End Date</label>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>End Date</label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   required
-                  style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%' }}
                 />
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#334155' }}>Reason</label>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Reason Details</label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Reason for requesting leave..."
+                placeholder="Reason for requesting time-off..."
                 required
-                style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', minHeight: '80px', fontFamily: 'inherit' }}
+                style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', minHeight: '100px', fontFamily: 'inherit', resize: 'vertical' }}
               />
             </div>
+
             <button
               type="submit"
               disabled={actionLoading}
               style={{
                 alignSelf: 'flex-start',
                 padding: '0.75rem 1.5rem',
-                backgroundColor: '#2563eb',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
-                fontWeight: '600'
+                fontWeight: '600',
+                boxShadow: '0 4px 10px rgba(79, 70, 229, 0.2)',
+                transition: 'transform 0.2s ease'
               }}
+              onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+              onMouseOut={(e) => e.target.style.transform = 'none'}
             >
-              Submit Request
+              Submit Roster Request
             </button>
           </form>
         </div>
@@ -349,95 +377,74 @@ const Leaves = () => {
 
       {/* Leave Requests Table */}
       {loading ? (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px',
-          gap: '1rem'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #cbd5e1',
-            borderTop: '4px solid #2563eb',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '1rem', fontWeight: '500' }}>Fetching leave requests, please wait...</p>
+        <div className="dashboard-loading">
+          <div className="spinner" />
+          <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Fetching leave logs, please wait...</p>
         </div>
       ) : (
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          padding: '1rem',
-          overflowX: 'auto'
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem', textAlign: 'left' }}>
+        <div className="table-wrap">
+          <table className="dashboard-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.9rem', fontWeight: '600' }}>
-                {!isEmployee && <th style={{ padding: '0.75rem' }}>Employee</th>}
-                <th style={{ padding: '0.75rem' }}>Leave Type</th>
-                <th style={{ padding: '0.75rem' }}>Start Date</th>
-                <th style={{ padding: '0.75rem' }}>End Date</th>
-                <th style={{ padding: '0.75rem' }}>Reason</th>
-                <th style={{ padding: '0.75rem' }}>Status</th>
-                {isAdminOrHR && <th style={{ padding: '0.75rem', textAlign: 'center' }}>Actions</th>}
+              <tr>
+                {!isEmployee && <th>Employee Details</th>}
+                <th>Leave Category</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+                {isAdminOrHR && <th style={{ textAlign: 'center' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdminOrHR ? 7 : isEmployee ? 5 : 6} style={{ padding: '2rem', textAlign: 'center', color: '#777' }}>
-                    No leave requests found.
+                  <td colSpan={isAdminOrHR ? 7 : isEmployee ? 5 : 6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '500' }}>
+                    No leave requests found on record.
                   </td>
                 </tr>
               ) : (
                 records.map((rec, index) => (
-                  <tr key={rec._id || index} style={{ borderBottom: '1px solid #f1f5f9', fontSize: '0.95rem', color: '#334155' }}>
+                  <tr key={rec._id || index} id={rec._id}>
                     {!isEmployee && (
-                      <td style={{ padding: '0.75rem' }}>
-                        <div style={{ fontWeight: '500', color: '#0f172a' }}>{rec.employee?.name || 'Unknown'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>ID: {rec.employee?.employeeId || 'N/A'}</div>
+                      <td>
+                        <div className="table-employee">
+                          <strong>{rec.employee?.name || 'Unknown'}</strong>
+                          <span>ID: {rec.employee?.employeeId || 'N/A'}</span>
+                        </div>
                       </td>
                     )}
-                    <td style={{ padding: '0.75rem', fontWeight: '500' }}>{rec.leaveType}</td>
-                    <td style={{ padding: '0.75rem' }}>{formatDate(rec.startDate)}</td>
-                    <td style={{ padding: '0.75rem' }}>{formatDate(rec.endDate)}</td>
-                    <td style={{ padding: '0.75rem', color: '#64748b', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rec.reason}>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{rec.leaveType}</td>
+                    <td>{formatDate(rec.startDate)}</td>
+                    <td>{formatDate(rec.endDate)}</td>
+                    <td style={{ color: 'var(--text-muted)', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rec.reason}>
                       {rec.reason || '--'}
                     </td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={getStatusStyle(rec.status)}>
+                    <td>
+                      <span className={getStatusClass(rec.status)}>
                         {rec.status}
                       </span>
                     </td>
                     {isAdminOrHR && (
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <td>
                         {rec.status === 'Pending' ? (
                           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                             <button
                               onClick={() => handleApprove(rec._id)}
                               disabled={actionLoading}
                               style={{
-                                padding: '0.3rem 0.6rem',
-                                backgroundColor: '#28a745',
+                                padding: '0.35rem 0.75rem',
+                                backgroundColor: 'var(--success)',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '4px',
+                                borderRadius: 'var(--radius-sm)',
                                 cursor: 'pointer',
                                 fontSize: '0.8rem',
-                                fontWeight: '500'
+                                fontWeight: '700',
+                                boxShadow: '0 2px 5px rgba(16, 185, 129, 0.2)',
+                                transition: 'transform 0.2s ease'
                               }}
+                              onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                              onMouseOut={(e) => e.target.style.transform = 'none'}
                             >
                               Approve
                             </button>
@@ -445,21 +452,25 @@ const Leaves = () => {
                               onClick={() => handleReject(rec._id)}
                               disabled={actionLoading}
                               style={{
-                                padding: '0.3rem 0.6rem',
-                                backgroundColor: '#dc3545',
+                                padding: '0.35rem 0.75rem',
+                                backgroundColor: 'var(--danger)',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '4px',
+                                borderRadius: 'var(--radius-sm)',
                                 cursor: 'pointer',
                                 fontSize: '0.8rem',
-                                fontWeight: '500'
+                                fontWeight: '700',
+                                boxShadow: '0 2px 5px rgba(239, 68, 68, 0.2)',
+                                transition: 'transform 0.2s ease'
                               }}
+                              onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+                              onMouseOut={(e) => e.target.style.transform = 'none'}
                             >
                               Reject
                             </button>
                           </div>
                         ) : (
-                          <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Processed</span>
+                          <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Processed</div>
                         )}
                       </td>
                     )}

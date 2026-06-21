@@ -26,98 +26,125 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  // Dispatch profile update for in-memory global search
+  useEffect(() => {
+    if (profile) {
+      window.dispatchEvent(new CustomEvent('ems-data-profile', { detail: profile }));
+    }
+  }, [profile]);
+
+  const initials = profile?.name
+    ? profile.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+    : 'EM';
+
   return (
-    <div className="profile-page" style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0, color: '#0f172a', fontWeight: 'bold' }}>My Profile</h1>
+    <div className="section-card" style={{ maxWidth: '720px', margin: '0 auto', padding: '0', overflow: 'hidden', animation: 'fade-in-up 0.4s ease' }}>
+      {/* Banner / Header Card */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+        padding: '3rem 2rem',
+        textAlign: 'center',
+        color: 'white',
+        position: 'relative'
+      }}>
+        {/* Demo badge inside banner */}
         {isOfflineMode && (
-          <span style={{
-            backgroundColor: '#fffbeb',
-            color: '#b45309',
-            border: '1px solid #fef3c7',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '9999px',
-            fontSize: '0.8rem',
-            fontWeight: '600'
-          }}>
-            ⚡ Demo Mode
+          <span className="badge badge--warning" style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', border: '1px solid rgba(245, 158, 11, 0.4)', color: 'white' }}>
+            Demo Mode
           </span>
         )}
+
+        {/* Profile Avatar */}
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          border: '4px solid rgba(255, 255, 255, 0.25)',
+          color: 'white',
+          fontWeight: 800,
+          fontSize: '1.75rem',
+          display: 'grid',
+          placeItems: 'center',
+          margin: '0 auto 1rem',
+          boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+        }}>
+          {initials}
+        </div>
+        
+        <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>{profile?.name || 'EMS Employee'}</h2>
+        <p style={{ color: '#c7d2fe', fontSize: '0.9rem', marginTop: '0.25rem', textTransform: 'capitalize', fontWeight: 500 }}>
+          {profile?.designation || 'Staff'} · {profile?.department || 'Roster'}
+        </p>
       </div>
-      
-      <p style={{ color: '#64748b' }}>View your personal and corporate details.</p>
 
-      {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          color: '#991b1b',
-          padding: '1rem 1.5rem',
-          borderRadius: '8px',
-          border: '1px solid #fca5a5',
-          marginBottom: '2rem'
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
+      <div style={{ padding: '2.5rem 2rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
+          Inspect your verified personal credentials and corporate directory information.
+        </p>
 
-      {loading ? (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px',
-          gap: '1rem'
-        }}>
+        {error && (
+          <div className="alert" style={{ marginBottom: '2rem' }}>
+            <span>⚠️</span>
+            <div>{error}</div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="dashboard-loading" style={{ border: 'none', boxShadow: 'none', padding: '2rem' }}>
+            <div className="spinner" />
+            <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Loading profile logs...</p>
+          </div>
+        ) : profile ? (
           <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #cbd5e1',
-            borderTop: '4px solid #2563eb',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '1rem', fontWeight: '500' }}>Fetching profile, please wait...</p>
-        </div>
-      ) : profile ? (
-        <div style={{
-          marginTop: '2rem',
-          padding: '2.5rem 2rem',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          backgroundColor: 'white',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-              <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</strong>
-              <p style={{ margin: '0.25rem 0 0 0', color: '#0f172a', fontSize: '1.15rem', fontWeight: '600' }}>{profile.name || '--'}</p>
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '1.5rem 2.5rem'
+          }}>
+            {/* Full Name */}
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</strong>
+              <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: '600' }}>{profile.name || '--'}</p>
             </div>
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-              <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</strong>
-              <p style={{ margin: '0.25rem 0 0 0', color: '#0f172a', fontSize: '1.1rem' }}>{profile.email || '--'}</p>
+            
+            {/* Email Address */}
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</strong>
+              <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: '500' }}>{profile.email || '--'}</p>
             </div>
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-              <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Role</strong>
-              <p style={{ margin: '0.25rem 0 0 0', color: '#2563eb', fontSize: '1rem', fontWeight: '600', textTransform: 'capitalize' }}>{profile.role || '--'}</p>
+            
+            {/* System Role */}
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Role</strong>
+              <p style={{ margin: '0.35rem 0 0 0', color: 'var(--primary)', fontSize: '0.95rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{profile.role || '--'}</p>
             </div>
-            <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-              <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</strong>
-              <p style={{ margin: '0.25rem 0 0 0', color: '#0f172a', fontSize: '1rem' }}>{profile.department || (profile.role === 'admin' ? 'Management' : profile.role === 'hr' ? 'HR' : '--')}</p>
+            
+            {/* Department */}
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</strong>
+              <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '600' }}>
+                {profile.department || (profile.role === 'admin' ? 'Management' : profile.role === 'hr' ? 'HR' : '--')}
+              </p>
             </div>
-            <div>
-              <strong style={{ color: '#475569', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</strong>
-              <p style={{ margin: '0.25rem 0 0 0', color: '#0f172a', fontSize: '1rem' }}>{profile.designation || (profile.role === 'admin' ? 'System Administrator' : profile.role === 'hr' ? 'HR Specialist' : '--')}</p>
+            
+            {/* Designation */}
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</strong>
+              <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '600' }}>
+                {profile.designation || (profile.role === 'admin' ? 'System Administrator' : profile.role === 'hr' ? 'HR Specialist' : '--')}
+              </p>
+            </div>
+
+            {/* Profile ID Status */}
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Roster ID</strong>
+              <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>
+                {profile.employeeId || profile._id || '--'}
+              </p>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 };

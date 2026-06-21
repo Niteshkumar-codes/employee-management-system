@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 const Attendance = () => {
@@ -22,6 +23,33 @@ const Attendance = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
+  const location = useLocation();
+
+  // Dispatch attendance list update for in-memory global search
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ems-data-attendance', { detail: records }));
+  }, [records]);
+
+  // Scroll to search highlighted item
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.substring(1);
+      const timer = setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.style.backgroundColor = 'rgba(79, 70, 229, 0.08)';
+          element.style.transition = 'background-color 0.5s ease';
+          const fadeTimer = setTimeout(() => {
+            element.style.backgroundColor = '';
+          }, 3000);
+          return () => clearTimeout(fadeTimer);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [location, records]);
+
   useEffect(() => {
     const fetchAttendance = async () => {
       if (!user) {
@@ -34,7 +62,6 @@ const Attendance = () => {
       setError('');
       try {
         if (user.role === 'employee') {
-          // Resolve employee id via profile endpoint which merges employee record
           const profileResp = await apiService.getProfile();
           const profile = profileResp.data;
           const empId = profile._id || profile.employeeId || profile.id;
@@ -44,9 +71,7 @@ const Attendance = () => {
           setRecords(attendanceResp.data);
           setIsOfflineMode(profileResp.isMock || attendanceResp.isMock);
         } else {
-          // Admin / HR
           const { data, isMock } = await apiService.getAttendanceRecords();
-          // API returns { total, page, limit, records }
           setRecords(data.records || data || []);
           setIsOfflineMode(isMock);
         }
@@ -75,7 +100,6 @@ const Attendance = () => {
   const handleCheckIn = async () => {
     if (!user) return;
 
-    // Find today's record by local date
     const todayStr = formatLocalDate(new Date());
     const todayRecord = records.find(rec => {
       if (!rec?.date) return false;
@@ -103,6 +127,16 @@ const Attendance = () => {
       console.log('Attendance.checkIn response:', data);
       setIsOfflineMode(isMock);
       setSuccessMsg('Successfully checked in!');
+      
+      const event = new CustomEvent('ems-notification', {
+        detail: {
+          type: 'attendance',
+          text: `Attendance marked: ${user?.name || 'Employee'} checked in`,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+
       setRetryToggle(prev => !prev);
     } catch (err) {
       console.error('Check-in error:', err);
@@ -122,7 +156,6 @@ const Attendance = () => {
   const handleCheckOut = async () => {
     if (!user) return;
 
-    // Find today's record by local date
     const todayStr = formatLocalDate(new Date());
     const todayRecord = records.find(rec => {
       if (!rec?.date) return false;
@@ -164,6 +197,17 @@ const Attendance = () => {
       console.log('Attendance.checkOut response:', data);
       setIsOfflineMode(isMock);
       setSuccessMsg('Successfully checked out!');
+      
+      const event = new CustomEvent('ems-notification', {
+        detail: {
+          type: 'attendance',
+          text: `Attendance marked: ${user?.name || 'Employee'} checked out`,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+
+      setRetryToggle(prev => !prev);
     } catch (err) {
       console.error('Check-out error:', err);
       if (err?.response) {
@@ -197,78 +241,67 @@ const Attendance = () => {
     });
   };
 
-  const getStatusStyle = (status) => {
-    const isPresent = status === 'Present';
-    const isHalfDay = status === 'Half-Day';
-    return {
-      backgroundColor: isPresent ? '#e6fffa' : isHalfDay ? '#fffaf0' : '#fff5f5',
-      color: isPresent ? '#047487' : isHalfDay ? '#dd6b20' : '#c53030',
-      border: isPresent ? '1px solid #b2f5ea' : isHalfDay ? '1px solid #fbd38d' : '1px solid #feb2b2',
-      padding: '0.25rem 0.6rem',
-      borderRadius: '20px',
-      fontSize: '0.8rem',
-      fontWeight: '600',
-      display: 'inline-block'
-    };
+  const getStatusClass = (status) => {
+    const val = status?.toLowerCase();
+    if (val === 'present') return 'badge badge--success';
+    if (val === 'half-day') return 'badge badge--warning';
+    return 'badge badge--danger';
   };
 
   const isEmployee = user?.role === 'employee';
 
   return (
-    <div className="attendance-page" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className="section-card section-card--wide" style={{ animation: 'fade-in-up 0.4s ease' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h1 style={{ margin: 0, color: '#0f172a', fontWeight: 'bold' }}>Attendance Log</h1>
-          {isOfflineMode && (
-            <span style={{
-              backgroundColor: '#fffbeb',
-              color: '#b45309',
-              border: '1px solid #fef3c7',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.8rem',
-              fontWeight: '600'
-            }}>
-              ⚡ Demo Mode
-            </span>
-          )}
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>Attendance Logs</h1>
+          {isOfflineMode && <span className="badge badge--warning">Demo Fallback Mode</span>}
         </div>
-        <div style={{ color: '#64748b', fontSize: '0.95rem' }}>
-          Role: <strong style={{ color: '#2563eb', textTransform: 'capitalize' }}>{user?.role || 'Guest'}</strong>
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500 }}>
+          Logged in as: <strong style={{ color: 'var(--primary)', textTransform: 'capitalize' }}>{user?.role || 'Guest'}</strong>
         </div>
       </div>
 
-      <p style={{ color: '#64748b', marginTop: '-1rem', marginBottom: '2rem' }}>
-        {isEmployee ? 'Mark your daily attendance, check in and check out.' : 'Monitor daily attendance records for all active employees.'}
+      <p style={{ color: 'var(--text-muted)', marginTop: '-1.25rem', marginBottom: '2rem', fontSize: '0.95rem' }}>
+        {isEmployee ? 'Punch your daily check-in and check-out logs to record active working hours.' : 'Monitor daily attendance records for all active employees across workspaces.'}
       </p>
 
       {/* Employee Quick Actions */}
       {isEmployee && (
         <div style={{
-          backgroundColor: 'white',
+          background: 'var(--background)',
           padding: '1.5rem',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
           marginBottom: '2rem'
         }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>⏱️ Daily Actions</h3>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Punch Console
+          </h3>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <button
               onClick={handleCheckIn}
               disabled={actionLoading}
               style={{
                 padding: '0.75rem 1.5rem',
-                backgroundColor: '#2563eb',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontWeight: '600',
-                transition: 'background-color 0.2s'
+                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)',
+                transition: 'transform 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#2563eb'}
+              onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
+              onMouseOut={(e) => e.target.style.transform = 'none'}
             >
               Check In
             </button>
@@ -277,16 +310,26 @@ const Attendance = () => {
               disabled={actionLoading}
               style={{
                 padding: '0.75rem 1.5rem',
-                backgroundColor: '#475569',
+                backgroundColor: 'var(--text-primary)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontWeight: '600',
-                transition: 'background-color 0.2s'
+                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
+                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#334155'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#475569'}
+              onMouseOver={(e) => {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.backgroundColor = '#1e293b';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.transform = 'none';
+                e.target.style.backgroundColor = 'var(--text-primary)';
+              }}
             >
               Check Out
             </button>
@@ -295,97 +338,58 @@ const Attendance = () => {
       )}
 
       {successMsg && (
-        <div style={{
-          backgroundColor: '#f0fdf4',
-          color: '#16a34a',
-          padding: '0.75rem 1rem',
-          borderRadius: '8px',
-          border: '1px solid #bbf7d0',
-          marginBottom: '1.5rem',
-          fontWeight: '500'
-        }}>
-          ✅ {successMsg}
+        <div className="badge badge--success" style={{ padding: '0.75rem 1rem', width: '100%', marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', fontSize: '0.9rem' }}>
+          <span>✅</span> {successMsg}
         </div>
       )}
 
       {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          color: '#991b1b',
-          padding: '1rem 1.5rem',
-          borderRadius: '8px',
-          border: '1px solid #fca5a5',
-          marginBottom: '2rem'
-        }}>
-          ⚠️ {error}
+        <div className="alert" style={{ marginBottom: '2rem' }}>
+          <span>⚠️</span>
+          <div>{error}</div>
         </div>
       )}
 
       {loading ? (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px',
-          gap: '1rem'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #cbd5e1',
-            borderTop: '4px solid #2563eb',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '1rem', fontWeight: '500' }}>Fetching attendance logs, please wait...</p>
+        <div className="dashboard-loading">
+          <div className="spinner" />
+          <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Fetching attendance registry, please wait...</p>
         </div>
       ) : (
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          padding: '1rem',
-          overflowX: 'auto'
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem', textAlign: 'left' }}>
+        <div className="table-wrap">
+          <table className="dashboard-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#475569', fontSize: '0.9rem', fontWeight: '600' }}>
-                <th style={{ padding: '0.75rem' }}>Date</th>
-                {!isEmployee && <th style={{ padding: '0.75rem' }}>Employee</th>}
-                <th style={{ padding: '0.75rem' }}>Check In</th>
-                <th style={{ padding: '0.75rem' }}>Check Out</th>
-                <th style={{ padding: '0.75rem' }}>Status</th>
+              <tr>
+                <th>Date</th>
+                {!isEmployee && <th>Employee Details</th>}
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={isEmployee ? 4 : 5} style={{ padding: '2rem', textAlign: 'center', color: '#777' }}>
-                    No attendance logs found.
+                  <td colSpan={isEmployee ? 4 : 5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '500' }}>
+                    No daily attendance logs found on record.
                   </td>
                 </tr>
               ) : (
                 records.map((rec, index) => (
-                  <tr key={rec._id || index} style={{ borderBottom: '1px solid #f1f5f9', fontSize: '0.95rem', color: '#334155' }}>
-                    <td style={{ padding: '0.75rem', fontWeight: '500' }}>{formatDate(rec.date)}</td>
+                  <tr key={rec._id || index} id={rec._id}>
+                    <td style={{ fontWeight: 600 }}>{formatDate(rec.date)}</td>
                     {!isEmployee && (
-                      <td style={{ padding: '0.75rem' }}>
-                        <div style={{ fontWeight: '500', color: '#0f172a' }}>{rec.employee?.name || 'Unknown'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>ID: {rec.employee?.employeeId || 'N/A'}</div>
+                      <td>
+                        <div className="table-employee">
+                          <strong>{rec.employee?.name || 'Unknown'}</strong>
+                          <span>ID: {rec.employee?.employeeId || 'N/A'}</span>
+                        </div>
                       </td>
                     )}
-                    <td style={{ padding: '0.75rem' }}>{formatTime(rec.checkIn)}</td>
-                    <td style={{ padding: '0.75rem' }}>{formatTime(rec.checkOut)}</td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={getStatusStyle(rec.status)}>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{formatTime(rec.checkIn)}</td>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{formatTime(rec.checkOut)}</td>
+                    <td>
+                      <span className={getStatusClass(rec.status)}>
                         {rec.status}
                       </span>
                     </td>
